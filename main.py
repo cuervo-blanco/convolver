@@ -70,16 +70,79 @@ def plot_signals(original, convolved):
     plt.show()
 
 
+# Impulse Response Generators
+def sinc_filter(length, cutoff):
+    """Generate a sinc filter as an impulse response."""
+    # Cutoff 0.1 - 1.0
+    t = np.linspace(-length // 2, length // 2, length)
+    impulse_response = cutoff * np.sinc(cutoff * t)
+    # Normalize
+    return impulse_response
+
+
+def gaussian_impulse_response(length, std_dev):
+    # Generate a Gaussian impulse response
+    t = np.linspace(-length // 2, length // 2, length)
+    impulse_response = np.exp(-0.5 * (t / std_dev) ** 2)
+    return impulse_response
+
+
+def exponential_decay(length, decay_rate):
+    # Generate an exponential decay impulse response.
+    t = np.linspace(0, length, length)
+    impulse_response = np.exp(-decay_rate * t)
+    return impulse_response
+
+
+def impulse_selector():
+    # Select one from a list of impulse responses
+    length = 256
+
+    root = tk.Tk()
+    root.withdraw()
+    choice = tk.simpledialog.askstring(
+            "Impulse Response Choice",
+            "Type to choose: (s)sinc filter, (g)gaussian, (e)exponential decay"
+            ).strip().lower()
+    if choice == 's':
+        cutoff = 1
+        impulse_response = sinc_filter(length, cutoff)
+        return impulse_response
+    elif choice == 'g':
+        std_dev = 50
+        impulse_response = gaussian_impulse_response(length, std_dev)
+        return impulse_response
+    elif choice == 'e':
+        decay_rate = 0.1
+        impulse_response = exponential_decay(length, decay_rate)
+        return impulse_response
+
+
 def main():
     # Load the audio signal and impulse response
     audio_file = get_audio_file_directory()
     print(f"Selected audio file: {audio_file}")
-    impulse_file = get_audio_file_directory()
-    print(f"Selected impulse file: {impulse_file}")
-
     signal, sample_rate = load_audio(audio_file)
-    impulse_response, _ = load_audio(impulse_file)
-    impulse_response = normalize_audio(impulse_response)
+
+    root = tk.Tk()
+    root.withdraw()
+    choice = tk.simpledialog.askstring(
+            "Impulse Response Choice",
+            "Type 'generate' or 'load':"
+            ).strip().lower()
+
+    if choice == 'generate':
+        # Generate a custom impulse response
+        impulse_response = impulse_selector()
+        impulse_response = normalize_audio(impulse_response)
+    elif choice == 'load':
+        impulse_file = get_audio_file_directory()
+        print(f"Selected impulse file: {impulse_file}")
+        impulse_response, _ = load_audio(impulse_file)
+        impulse_response = normalize_audio(impulse_response)
+    else:
+        print("Invalid choice. Exiting.")
+        return
 
     impulse_response = impulse_response.flatten()
 
